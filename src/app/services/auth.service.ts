@@ -3,42 +3,75 @@ import { AngularFireAuth } from '@angular/fire/auth';
 import { AngularFirestore } from '@angular/fire/firestore/'
 import { map } from 'rxjs/operators';
 import { Usuario } from '../models/usuario.model';
+import { Store } from '@ngrx/store';
+import { AppState } from '../app.reducer';
+import * as authActions from '../auth/auth.actions';
+import { Subscription } from 'rxjs';
 
 @Injectable()
 export class AuthService {
 
-  constructor(public auth: AngularFireAuth,
-              public firestore: AngularFirestore) { }
+  userSubscription: Subscription;
 
-  initAuthListener(){ // avisarnos cambios de la autenticación
-    this.auth.authState.subscribe( fuser => { //trabaja con funciones de signIn y se subscribe
-    console.log(fuser?.uid);
-    console.log(fuser?.email);
+  constructor(public auth: AngularFireAuth,
+    public firestore: AngularFirestore,
+    private store: Store<AppState>) { }
+
+
+
+  initAuthListener() { // avisarnos cambios de la autenticación
+
+    this.auth.authState.subscribe(fuser => { //me subcribo a los cambios de auth
+
+      if (fuser) { 
+
+        this.userSubscription = this.firestore.doc(`${fuser.uid}/usuario`)
+          .valueChanges()
+          .subscribe((userFire:any) => { //si existe usuario me subscribo a los cambios de ese usuario
+            const tempUser = Usuario.fromFirebase(userFire);
+            this.store.dispatch(authActions.setUser({ user: tempUser })); // inserto el valor del usuario logueado
+          });
+      } 
+      
+      
+      else { // si no existe usuario me desubscribo y quito el valor de la variable
+        //unsetSubscribe
+        if(this.userSubscription){
+          this.userSubscription.unsubscribe();
+        }
+        this.store.dispatch(authActions.unsetUser());
+      }
     });
   }
 
-  crearUsuario(nombre: string, email: string, password: string){ // tambien se puede mandar la desestruturacion del objeto
-  return  this.auth.auth.createUserWithEmailAndPassword(email, password)
-          .then(({user}) => {
-            const newUser = new Usuario(user.uid, nombre, user.email);
-            return this.firestore.doc(`${user.uid}/usuario`) //url que se apunta [xxxxxx/usuario]
-                .set({...newUser}); //'devuelve otra promesa'
-          });
+
+  crearUsuario(nombre: string, email: string, password: string) { // tambien se puede mandar la desestruturacion del objeto
+    return this.auth.auth.createUserWithEmailAndPassword(email, password) //crea un usuartio auth
+      .then(({ user }) => { //en el caso que resuelva
+        const newUser = new Usuario(user.uid, nombre, user.email); //instancia model Usuario
+        return this.firestore.doc(`${user.uid}/usuario`) //url que se apunta [xxxxxx/usuario]
+          .set({ ...newUser }); // inserto el usuario a base de datos
+      });
   }
 
-  logearUsuario(email: string, password: string){
-    return  this.auth.auth.signInWithEmailAndPassword(email, password);
+
+  logearUsuario(email: string, password: string) {
+    return this.auth.auth.signInWithEmailAndPassword(email, password);
   }
 
-  logOut(){
+
+
+  logOut() {
     return this.auth.auth.signOut();
   }
 
-  isAuth(){ //esta autenticado o no?
+
+
+  isAuth() { //esta autenticado o no?
     //this.auth.authState; -> me devulve una promesa que resuelve (resolve) un USER
     //necesito un bool - entonces:
     return this.auth.authState.pipe(
-     map( fireuser => fireuser != null )
+      map(fireuser => fireuser != null)
     ) //funcion authState devuelve un observable - modifico con map para que resuelve un bool y no un user
   }
 }
