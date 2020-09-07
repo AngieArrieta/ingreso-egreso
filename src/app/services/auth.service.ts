@@ -1,17 +1,24 @@
 import { Injectable } from '@angular/core';
+
 import { AngularFireAuth } from '@angular/fire/auth';
 import { AngularFirestore } from '@angular/fire/firestore/'
+
+import { Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Usuario } from '../models/usuario.model';
 import { Store } from '@ngrx/store';
+
+import { Usuario } from '../models/usuario.model';
+
 import { AppState } from '../app.reducer';
 import * as authActions from '../auth/auth.actions';
-import { Subscription } from 'rxjs';
+import * as ingresoEsgresoActions from '../ingreso-egreso/ingreso-egreso.actions';
+
 
 @Injectable()
 export class AuthService {
 
   userSubscription: Subscription;
+  private _user: Usuario;
 
   constructor(public auth: AngularFireAuth,
     public firestore: AngularFirestore,
@@ -29,17 +36,21 @@ export class AuthService {
           .valueChanges()
           .subscribe((userFire:any) => { //si existe usuario me subscribo a los cambios de ese usuario
             const tempUser = Usuario.fromFirebase(userFire);
+            this._user = tempUser;
             this.store.dispatch(authActions.setUser({ user: tempUser })); // inserto el valor del usuario logueado
+            this.store.dispatch(ingresoEsgresoActions.unSetItems()); // si hay un tipo de cambio
           });
       } 
       
       
       else { // si no existe usuario me desubscribo y quito el valor de la variable
         //unsetSubscribe
+        this._user = null;
         if(this.userSubscription){
           this.userSubscription.unsubscribe();
         }
         this.store.dispatch(authActions.unsetUser());
+        this.store.dispatch(ingresoEsgresoActions.unSetItems());
       }
     });
   }
@@ -73,5 +84,9 @@ export class AuthService {
     return this.auth.authState.pipe(
       map(fireuser => fireuser != null)
     ) //funcion authState devuelve un observable - modifico con map para que resuelve un bool y no un user
+  }
+
+  getUser(){
+    return {... this._user};
   }
 }

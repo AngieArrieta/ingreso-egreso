@@ -33,10 +33,7 @@ export class LoginComponent implements OnInit, OnDestroy {
       password: ['', Validators.required]
     });
 
-    this.uiSubscription = this.store.select('ui').subscribe(ui => {
-                          this.cargando = ui.isLoading ;
-                          console.log(ui);
-                          }); 
+    this.uiSubscription = this.store.select('ui').subscribe(ui => {this.cargando = ui.isLoading ;}); 
 
     // el state es un objeto
     // el servicio de store se subcribe para ver los cambios del nodo
