@@ -44,7 +44,7 @@ import { AuthModule } from './auth/auth.module';
     AngularFireAuthModule,
 
     //modulos de app
-    AuthModule,
+    AuthModule, //porque es la unica que se va a cargar sin ingresar
 
 
     //ngRx

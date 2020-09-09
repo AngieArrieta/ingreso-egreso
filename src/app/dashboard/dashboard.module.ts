@@ -5,11 +5,7 @@ import { dashboardRoutes } from './dashboard.routes';
 import { AuthGuard } from '../services/auth.guard';
 
 const rutasHijas: Routes = [
-  {
-    path: '', 
-    component: DashboardComponent, 
-    children: dashboardRoutes,
-    // canActivate: [AuthGuard]
+  { path: '',  component: DashboardComponent, children: dashboardRoutes, // canActivate: [AuthGuard]
   }
 ];
 

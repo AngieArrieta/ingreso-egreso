@@ -9,6 +9,8 @@ import { SharedModule } from '../shared/shared.module';
 import { DashboardModule } from '../dashboard/dashboard.module';
 import { OrdenIngresoPipe } from '../pipes/orden-ingreso.pipe';
 import { ChartsModule } from 'ng2-charts';
+import { StoreModule } from '@ngrx/store';
+import { ingresoEgresoReducer } from './ingreso-egreso.reducer';
 
 // modulo que se carga con lazyload porque hasta que se autentique es que va a cargarse
 
@@ -23,6 +25,7 @@ import { ChartsModule } from 'ng2-charts';
   imports: [
     ReactiveFormsModule,
     CommonModule,
+    StoreModule.forFeature('ingresosEgresos', ingresoEgresoReducer), //lazyload de store
     SharedModule,
     DashboardModule,
     ChartsModule
